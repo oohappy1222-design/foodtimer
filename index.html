@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>완벽한 라면 타이머</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #fef2f2; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #fdba74; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f97316; }
+    </style>
+</head>
+<body class="bg-orange-50 text-gray-800 min-h-screen p-4 md:p-8">
+    <div class="max-w-5xl mx-auto flex flex-col items-center">
+        <!-- Header -->
+        <header class="w-full flex flex-wrap justify-between items-center mb-8 gap-4">
+            <h1 class="text-3xl font-black text-orange-600 flex items-center gap-2">
+                <span class="text-4xl">🍜</span> 완벽한 라면 타이머
+            </h1>
+            <div class="flex items-center gap-3">
+                <button id="voiceToggle" class="flex items-center gap-2 px-4 py-2 rounded-full shadow-sm border transition-all bg-orange-500 text-white border-orange-600">
+                    <i class="fas fa-volume-up" id="voiceIcon"></i>
+                    <span class="font-bold text-sm hidden sm:inline" id="voiceText">음성 켜짐</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Timer Display -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <div class="bg-white rounded-3xl p-8 shadow-xl border border-orange-100 flex flex-col items-center relative overflow-hidden">
+                    <div id="progressBar" class="absolute bottom-0 left-0 h-2 bg-orange-400 transition-all duration-1000" style="width: 0%"></div>
+                    
+                    <div id="stepName" class="text-sm font-bold uppercase tracking-wider text-orange-400 mb-2">물 끓이기</div>
+                    <div id="displayTime" class="text-8xl md:text-9xl font-black my-4 tabular-nums text-gray-900 transition-all">0:00</div>
+                    <div id="stepStatus" class="text-xl font-medium text-gray-500 mb-8 text-center h-8">준비 중...</div>
+
+                    <div class="flex gap-4 w-full justify-center">
+                        <button id="mainBtn" class="flex-1 max-w-[160px] py-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-white transition-all transform active:scale-95 shadow-lg bg-orange-500 hover:bg-orange-600">
+                            <i class="fas fa-play"></i> 시작
+                        </button>
+                        <button id="resetBtn" class="p-4 bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all active:scale-95">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button id="nextBtn" class="flex-1 max-w-[160px] py-4 bg-green-500 hover:bg-green-600 text-white rounded-2xl flex items-center justify-center gap-2 font-bold transition-all transform active:scale-95 shadow-lg hidden">
+                            다음 단계 <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recipe Guide -->
+                <div class="bg-orange-100/50 rounded-2xl p-6 border border-orange-200">
+                    <h3 class="font-bold text-orange-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-cog"></i> <span id="guideTitle">신라면</span> 레시피 가이드
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+                            <p class="text-orange-500 font-bold mb-1">Step 1</p>
+                            <p class="text-gray-600" id="guideStep1">물을 끓입니다.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+                            <p class="text-orange-500 font-bold mb-1">Step 2</p>
+                            <p class="text-gray-600" id="guideStep2">면과 스프를 넣습니다.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+                            <p class="text-orange-500 font-bold mb-1">Step 3</p>
+                            <p class="text-gray-600" id="guideStep3">토핑을 넣고 마무리합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Settings -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <!-- Heat Source -->
+                <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-4">가열 기구</h3>
+                    <div class="flex gap-3">
+                        <button onclick="setHeat('gas')" id="heatGas" class="heat-btn flex-1 py-3 rounded-xl font-bold border-2 transition-all flex items-center justify-center gap-2 border-orange-500 bg-orange-50 text-orange-600">
+                            <i class="fas fa-fire"></i> 가스레인지
+                        </button>
+                        <button onclick="setHeat('induction')" id="heatInduction" class="heat-btn flex-1 py-3 rounded-xl font-bold border-2 transition-all flex items-center justify-center gap-2 border-gray-100 text-gray-400">
+                            <i class="fas fa-bolt"></i> 인덕션
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ramen Selection -->
+                <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-4">라면 선택</h3>
+                    <div id="ramenGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                        <!-- JS로 채워짐 -->
+                    </div>
+                </div>
+
+                <!-- Toppings -->
+                <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-4">토핑 선택 (복수 가능)</h3>
+                    <div id="toppingGrid" class="flex flex-wrap gap-2">
+                        <!-- JS로 채워짐 -->
+                    </div>
+                </div>
+
+                <!-- Egg Style -->
+                <div class="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+                    <h3 class="font-bold text-gray-700 mb-4">계란 취향</h3>
+                    <div id="eggGrid" class="grid grid-cols-2 gap-2">
+                        <!-- JS로 채워짐 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const RAMEN_LIST = [
+            { name: '신라면', time: 270 }, { name: '진라면(매운맛)', time: 240 }, { name: '진라면(순한맛)', time: 240 },
+            { name: '안성탕면', time: 270 }, { name: '삼양라면', time: 240 }, { name: '너구리', time: 300 },
+            { name: '짜파게티', time: 300 }, { name: '불닭볶음면', time: 300 }, { name: '팔도비빔면', time: 180 },
+            { name: '육개장사발면', time: 180 }, { name: '참깨라면', time: 240 }, { name: '열라면', time: 240 },
+            { name: '진짬뽕', time: 300 }, { name: '맛있는라면', time: 240 }, { name: '무파마', time: 270 },
+            { name: '오동통면', time: 300 }, { name: '스낵면', time: 120 }, { name: '라면볶이', time: 240 },
+            { name: '튀김우동', time: 240 }, { name: '틈새라면', time: 210 }, { name: '멸치칼국수', time: 300 },
+            { name: '사리곰탕', time: 180 }, { name: '갓짬뽕', time: 300 }, { name: '왕뚜껑', time: 180 },
+            { name: '미역국라면', time: 120 }
+        ];
+
+        const TOPPINGS = ['떡국떡', '대파', '치즈', '김치', '만두', '고춧가루', '콩나물', '햄/소시지'];
+        const EGGS = ['넣지 않음', '풀어서', '반숙(그대로)', '완숙'];
+
+        // State
+        let state = {
+            selectedRamen: RAMEN_LIST[0],
+            heatType: 'gas',
+            selectedToppings: [],
+            selectedEgg: 0,
+            isVoiceEnabled: true,
+            currentStep: 0,
+            timeLeft: 0,
+            isActive: false,
+            timer: null
+        };
+
+        // UI Elements
+        const displayTime = document.getElementById('displayTime');
+        const stepName = document.getElementById('stepName');
+        const stepStatus = document.getElementById('stepStatus');
+        const progressBar = document.getElementById('progressBar');
+        const mainBtn = document.getElementById('mainBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const voiceToggle = document.getElementById('voiceToggle');
+
+        // Speech
+        function speak(text) {
+            if (!state.isVoiceEnabled || !window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Timer Logic
+        function getStepTime(step) {
+            if (step === 0) return state.heatType === 'gas' ? 240 : 180;
+            if (step === 1) {
+                let base = state.selectedRamen.time;
+                if (state.selectedToppings.includes('떡국떡') || state.selectedToppings.includes('만두')) base += 30;
+                return Math.max(base - 60, 60);
+            }
+            if (step === 2) {
+                let time = 60;
+                if (state.selectedEgg === 3) time += 30;
+                if (state.selectedEgg === 2) time -= 10;
+                return time;
+            }
+            return 0;
+        }
+
+        function initStep(step) {
+            clearInterval(state.timer);
+            state.currentStep = step;
+            state.timeLeft = getStepTime(step);
+            state.isActive = false;
+            updateUI();
+            
+            const steps = ["물 끓이기", "면 & 스프 조리", "토핑 넣기", "완성!"];
+            stepName.textContent = steps[step];
+            
+            if (step === 0) speak("물을 올려주세요.");
+            else if (step === 1) speak(`${state.selectedRamen.name} 면과 스프를 넣어주세요.`);
+            else if (step === 2) speak("토핑과 계란을 넣을 시간입니다.");
+            else if (step === 3) speak("라면이 완성되었습니다. 맛있게 드세요.");
+        }
+
+        function updateUI() {
+            displayTime.textContent = formatTime(state.timeLeft);
+            const total = getStepTime(state.currentStep);
+            const perc = state.currentStep === 3 ? 100 : ((total - state.timeLeft) / total) * 100;
+            progressBar.style.width = perc + '%';
+
+            // Button Control
+            if (state.currentStep === 3) {
+                mainBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                stepStatus.textContent = "맛있게 드세요!";
+            } else {
+                mainBtn.classList.remove('hidden');
+                mainBtn.innerHTML = state.isActive ? '<i class="fas fa-pause"></i> 정지' : '<i class="fas fa-play"></i> 시작';
+                mainBtn.className = `flex-1 max-w-[160px] py-4 rounded-2xl flex items-center justify-center gap-2 font-bold text-white transition-all transform active:scale-95 shadow-lg ${state.isActive ? 'bg-gray-400' : 'bg-orange-500 hover:bg-orange-600'}`;
+                
+                if (!state.isActive && state.timeLeft < getStepTime(state.currentStep)) {
+                    nextBtn.classList.remove('hidden');
+                } else {
+                    nextBtn.classList.add('hidden');
+                }
+
+                const statusTexts = ["물 끓이는 중...", "면 익히는 중...", "토핑 투하!"];
+                stepStatus.textContent = state.isActive ? statusTexts[state.currentStep] : "준비 중";
+            }
+
+            // Guide Text
+            document.getElementById('guideTitle').textContent = state.selectedRamen.name;
+            document.getElementById('guideStep1').textContent = `약 500-550ml 물을 ${state.heatType === 'gas' ? '4분' : '3분'}간 끓입니다.`;
+            document.getElementById('guideStep2').textContent = `면과 스프를 넣고 약 ${Math.floor(getStepTime(1)/60)}분 ${getStepTime(1)%60}초간 조리합니다.`;
+            document.getElementById('guideStep3').textContent = `토핑과 ${EGGS[state.selectedEgg]} 계란을 넣고 마무리합니다.`;
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${m}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        // Actions
+        mainBtn.onclick = () => {
+            state.isActive = !state.isActive;
+            if (state.isActive) {
+                state.timer = setInterval(() => {
+                    state.timeLeft--;
+                    if (state.timeLeft === 10) speak("십 초 남았습니다.");
+                    if (state.timeLeft <= 0) {
+                        clearInterval(state.timer);
+                        state.isActive = false;
+                        if (state.currentStep < 2) speak("시간이 되었습니다. 다음 단계를 눌러주세요.");
+                        else initStep(3);
+                    }
+                    updateUI();
+                }, 1000);
+            } else {
+                clearInterval(state.timer);
+            }
+            updateUI();
+        };
+
+        resetBtn.onclick = () => {
+            speak("초기화합니다.");
+            initStep(0);
+        };
+
+        nextBtn.onclick = () => {
+            if (state.currentStep < 2) initStep(state.currentStep + 1);
+        };
+
+        voiceToggle.onclick = () => {
+            state.isVoiceEnabled = !state.isVoiceEnabled;
+            const icon = document.getElementById('voiceIcon');
+            const txt = document.getElementById('voiceText');
+            if (state.isVoiceEnabled) {
+                voiceToggle.className = "flex items-center gap-2 px-4 py-2 rounded-full shadow-sm border transition-all bg-orange-500 text-white border-orange-600";
+                icon.className = "fas fa-volume-up";
+                txt.textContent = "음성 켜짐";
+                speak("음성 안내를 시작합니다.");
+            } else {
+                voiceToggle.className = "flex items-center gap-2 px-4 py-2 rounded-full shadow-sm border transition-all bg-white text-gray-400 border-gray-200";
+                icon.className = "fas fa-volume-mute";
+                txt.textContent = "음성 꺼짐";
+            }
+        };
+
+        function setHeat(type) {
+            state.heatType = type;
+            document.getElementById('heatGas').className = `heat-btn flex-1 py-3 rounded-xl font-bold border-2 transition-all flex items-center justify-center gap-2 ${type === 'gas' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-100 text-gray-400'}`;
+            document.getElementById('heatInduction').className = `heat-btn flex-1 py-3 rounded-xl font-bold border-2 transition-all flex items-center justify-center gap-2 ${type === 'induction' ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-100 text-gray-400'}`;
+            initStep(0);
+        }
+
+        // Render Lists
+        function renderLists() {
+            const rGrid = document.getElementById('ramenGrid');
+            RAMEN_LIST.forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = `ramen-opt py-2 px-3 text-xs font-semibold rounded-lg border transition-all ${state.selectedRamen.name === r.name ? 'bg-orange-500 border-orange-500 text-white shadow-md' : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-orange-200'}`;
+                btn.textContent = r.name;
+                btn.onclick = () => {
+                    state.selectedRamen = r;
+                    document.querySelectorAll('.ramen-opt').forEach(b => b.className = `ramen-opt py-2 px-3 text-xs font-semibold rounded-lg border transition-all bg-gray-50 border-gray-100 text-gray-600 hover:border-orange-200`);
+                    btn.className = `ramen-opt py-2 px-3 text-xs font-semibold rounded-lg border transition-all bg-orange-500 border-orange-500 text-white shadow-md`;
+                    initStep(0);
+                };
+                rGrid.appendChild(btn);
+            });
+
+            const tGrid = document.getElementById('toppingGrid');
+            TOPPINGS.forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = `topping-opt px-3 py-2 text-xs font-bold rounded-full transition-all flex items-center gap-1 border bg-gray-50 text-gray-500 border-gray-100`;
+                btn.textContent = t;
+                btn.onclick = () => {
+                    if (state.selectedToppings.includes(t)) {
+                        state.selectedToppings = state.selectedToppings.filter(x => x !== t);
+                        btn.className = `topping-opt px-3 py-2 text-xs font-bold rounded-full transition-all flex items-center gap-1 border bg-gray-50 text-gray-500 border-gray-100`;
+                        btn.innerHTML = t;
+                    } else {
+                        state.selectedToppings.push(t);
+                        btn.className = `topping-opt px-3 py-2 text-xs font-bold rounded-full transition-all flex items-center gap-1 border bg-orange-100 text-orange-600 border-orange-300 shadow-sm`;
+                        btn.innerHTML = `<i class="fas fa-check text-[10px]"></i> ${t}`;
+                    }
+                    initStep(0);
+                };
+                tGrid.appendChild(btn);
+            });
+
+            const eGrid = document.getElementById('eggGrid');
+            EGGS.forEach((e, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `egg-opt py-2 px-3 text-sm font-semibold rounded-xl border transition-all ${state.selectedEgg === idx ? 'bg-yellow-100 border-yellow-400 text-yellow-700 shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-500 hover:bg-white hover:border-yellow-200'}`;
+                btn.textContent = e;
+                btn.onclick = () => {
+                    state.selectedEgg = idx;
+                    document.querySelectorAll('.egg-opt').forEach(b => b.className = `egg-opt py-2 px-3 text-sm font-semibold rounded-xl border transition-all bg-gray-50 border-gray-100 text-gray-500 hover:bg-white hover:border-yellow-200`);
+                    btn.className = `egg-opt py-2 px-3 text-sm font-semibold rounded-xl border transition-all bg-yellow-100 border-yellow-400 text-yellow-700 shadow-sm`;
+                    initStep(0);
+                };
+                eGrid.appendChild(btn);
+            });
+        }
+
+        // Init
+        window.onload = () => {
+            renderLists();
+            initStep(0);
+        };
+    </script>
+</body>
+</html>
